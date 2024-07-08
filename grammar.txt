@@ -1,0 +1,448 @@
+GRAMMAR WITH TRANSLATION:
+BEF =0;
+BET =0;
+vector<int> BEF_v;
+vector<int> BET_v;
+vector<int> elses;
+n_line=1;
+argCount=0;
+
+
+LL(1):
+Program → DeclarationList {write_TAC("HALT");}
+
+DeclarationList → Declaration | Declaration DeclarationList 
+
+Declaration → VariableDeclaration | FunctionDeclaration
+
+VariableDeclaration → “rakho” 
+		               id              
+		               @
+	                   type 
+		               VDSpecifier               
+                       { VDSpecifier_i = id.lexeme }
+
+
+VDSpecifier  →   :=				     
+ 	             Expression  		
+	             {Expression_v = FunctionCall_v
+                 write_TAC(VDSpecfier_i, "=", Expression_v)}
+
+
+VDSpecifier →     :=				    
+                  FunctionCall                                     
+  	              {Expression_v = FunctionCall_v
+   	               write_TAC(VDSpecifier_i,  "=", Expression_v)}
+	        
+
+VDSpecifier  →  \n
+
+
+VariableAssignment → "rakho”
+		              id  
+		              := 
+		              Expression
+                      { write_TAC(id.lexeme, "=", Expression_v}		
+
+
+FunctionDeclaration → “kaam” id @ typeF ( ParameterList ) BlockF
+ParameterList → Parameter | Parameter "|" ParameterList 
+Parameter → id @ typeV
+Block → "karo" \n  StatementList "bas karo" \n
+BlockF →  "karo" \n  StatementList "kaam khatam" \n
+StatementList → Statement | Statement StatementList
+Statement → Expression | SelectionStatement |  IterativeStatement | ReturnStatement | VariableDeclaration | VariableAssignment | FunctionCall | IOStatement 
+
+
+IFStatementList → IFStatement | IFStatement IFStatementList
+IFStatement →  Expression 
+IFStatement →  SelectionStatement 
+IFStatement →  IterativeStatement 
+IFStatement →  ReturnStatement 
+IFStatement →  VariableDeclaration 
+IFStatement →  VariableAssignment 
+IFStatement →  FunctionCall 
+IFStatement →  IOStatement 
+IFStatement →  WarnaStatement 
+               {  write_TAC("goto"};
+	              elses.push_back(n_line);
+                  write_TAC("_");
+                  BEF = BEF_v.back();
+                  BEF_v.pop_back();
+	              fillBlank(BEF, n_line); }
+	          
+
+
+SelectionStatement → "agar" 
+                    ( Expression ) 
+		            {   BET= BET_v.back();
+                        BET_v.pop_back();
+                        fillblank(BET, n_line);  }
+                    "to phir" 
+                    BlockIF
+
+
+BlockIF → "karo" \n  
+	      IFSatementList 
+          {for each i in elses fillblank(elses[i],n_line); elses.clear();}
+          "bas karo" \n
+
+WarnaStatement → “warna” PhirStatement | ^ 
+
+PhirStatement →  "agar" 
+	              ( Expression ) 
+		          {
+                    BET= BET_v.back();
+                    BET_v.pop_back();
+                    fillBlank(BET, n_line); }
+                   "to phir" \n  
+                  IFStatementList 
+
+
+PhirStatement → "phir" 
+                 StatementList 
+
+
+PhirStatement → ^
+
+IterativeStatement → "jab tak" 
+                    {BET.push_back(n_line);}
+	                  ( Expression ) 
+                      {
+                         BET = BET_v.back();
+                         BET_v.pop_back();
+                         fillBlank(BET, n_line); }
+                      Block
+	                 { 
+                        BET  =BET_v.back();
+                        BET_v.pop_back();
+                        write_TAC("goto", to_string(BET))
+                        BEF = BEF_v.back();
+                        BEF_v.pop_back();
+                        fillBlank(BEF, n_line); }
+
+
+
+ReturnStatement → "wapas bhaijo" 
+                   Expression \n
+                  { ReturnStatement_v = Expression_v ;
+                    write_TAC("ret", to_string(ReturnStatement_v)); }
+
+
+
+Expression → VariableAssignment    
+             {Expression_v = VariableAssignment_v}
+
+Expression → ComparisonExpression        
+             {Expression_v = ComparisonAssignment_v}
+
+
+ComparisonExpression →  E 		
+	                   {RELOPExpression_i = E_v}              
+		               RELOPExpression   
+
+
+ComparisonExpression →  E		
+                        {ComparisonExpression_v = E.v}
+
+
+
+RELOPExpression →  RELOP 
+	               E 		
+                   {  BET_v.push_back(n_line);
+	                  write_TAC("if",'(', RELOPExpression_i.lexeme, RO.lexeme, E_v.lexeme, ')')
+                      write_TAC("goto _");
+	                  BEF_v.push_back(n_line);
+		              write_TAC("goto _");  }
+
+
+E → TT 
+    ASExpression			
+    { ASExpression_i = TT.v;
+    E_v = ASEpression_v }
+
+
+
+ASExpression →  +
+	            TT
+                ASExpression1  	
+                {  token tmp  =tempVAR(); }
+				{  writeTAC(tmp , "=", ASExpression_i,  "+" , TT.v) }
+				{ ASExpression1_i =  tmp }
+				{ ASExpression_v = ASExpression1_v }	
+
+ASExpression →  -
+	            TT
+                ASExpression1  	
+                {  token tmp  =tempVAR(); }
+				{  writeTAC(tmp , "=", ASExpression_i,  "-" , TT.v) }
+				{ ASExpression1_i =  tmp }
+				{ ASExpression_v = ASExpression1_v }	
+
+
+ASExpression →   ^			
+                {ASExpression_v= ASExpression_i}
+
+
+
+TT → Terminal 
+     MDExpression
+
+
+MDExpression →  *
+	            Terminal
+                MDExpression1  	
+                {  token tmp  =tempVAR(); }
+				{  writeTAC(tmp , "=", MDExpression_i,  "*" , Terminal.v) }
+				{ MDExpression1_i =  tmp }
+				{ MDExpression_v = MDExpression1_v }	
+
+MDExpression →  /
+	            Terminal
+                MDExpression1  	
+                {  token tmp  =tempVAR(); }
+				{  writeTAC(tmp , "=", MDExpression_i,  "/" , Terminal.v) }
+				{ MDExpression1_i =  tmp }
+				{ MDExpression_v = MDExpression1_v }	
+
+MDExpression →  %
+	            Terminal
+                 MDExpression1  	
+                 {  token tmp  =tempVAR(); }
+				{  writeTAC(tmp , "=", MDExpression_i,  "%" , Terminal.v) }
+				{ MDExpression1_i =  tmp }
+				{ MDExpression_v = MDExpression1_v }	
+
+MDExpression → ^			
+              {MDExpression_v= MDExpression_i}	
+
+
+Terminal → id 			
+          {Terminal_v = id.lexeme}
+
+Terminal → int 			
+          {Terminal_v = int.lexeme}
+
+Terminal →( Expression ) 	
+
+Terminal → string			
+           {Terminal_v = string.lexeme}
+
+
+
+
+
+FunctionCall →    "chalao" 
+                  id 
+                  ( ArgumentList ) \n
+                  { int args = countArgs();
+	            	t  = tempVar();
+	            	write_TAC("call", to_string(id.lexeme), to_string(args), ',' , t }
+
+
+ArgumentList → Argument | Argument "|" ArgumentList 
+
+
+Argument → id
+	       {write_TAC("param" ,  to_string(id.lexeme))}
+
+Argument →  int 
+	        {write_TAC("param" ,  to_string(id.lexeme))}
+
+
+Argument → ( Expression ) 
+	       { Argument_v  = Expression_v ; 
+	         write_TAC("param" ,  to_string(Argument_v.lexeme)); }
+
+
+
+Argument →  ^
+
+
+IOStatement → InputStatement | PrintStatement
+InputStatement → "lo" InputSpecifier \n
+InputSpecifier → InOutStatement | IS1
+
+
+IS1 → >>
+      id 
+     InputVAR
+     { write_TAC("in", id.lexeme); }
+
+
+InputVAR → \n 
+
+InputVAR →  IS1 \n
+
+
+InOutStatement→  << PrintArg 
+
+PrintArg → string 
+           {write_TAC("out", '\"', string.lexeme, '\"')}
+           PrintCont 
+
+PrintArg → Expression
+          {PrintVar_v  = Expression_v}
+          {write_TAC("out", PrintVar_v.lexeme);}
+          PrintCont 
+
+PrintArg → int
+           {write_TAC("out", '\"', int.lexeme, '\"')}
+           PrintCont  
+
+PrintArg → id 
+          {write_TAC("out", '\"', id.lexeme, '\"')}
+          PrintCont  
+
+
+PrintCont  → \n | InOutStatement | IS1 
+
+PrintStatement → "dekhao"  PS1
+
+PS1 → << PrintVar 
+
+PrintVar → string 
+	       {write_TAC("out", '\"', string.lexeme, '\"')}
+            PrintTer 
+
+
+PrintVar → Expression
+          {PrintVar_v  = Expression_v;
+           write_TAC("out", PrintVar_v.lexeme);}
+          PrintTer 
+
+PrintVar → int 
+           {write_TAC("out", int.lexeme);}
+           PrintTer 
+
+PrintVar →id 
+          {write_TAC("out", id.lexeme);} 
+          PrintTer
+
+
+PrintTer → \n | PS1
+
+
+ 
+typeF → “adad” | “khali”
+typeV → “adad” 
+id → ( letter | _ )( letter | digit | _ )* 
+int → digit(digit)*
+digit → [0-9]
+letter → [A-Za-z]
+RELOP → <= | <> | < | > | >= | =
+string → `char`
+char → letter | digit | ao | > | < | = | { | } | _ | ^ | [ | ] | \ | ? | . | " | $ | # | ! | & | | | : | ; | @ | ' | ( | )
+
+
+
+
+
+
+LL(1):
+Program → DeclarationList
+DeclarationList → Declaration | Declaration DeclarationList 
+Declaration → VariableDeclaration | FunctionDeclaration
+VariableDeclaration → “rakho” id @ type VDSpecifier
+VDSpecifier  → := Expression  | := FunctionCall | \n
+VariableAssignment → "rakho” id  :=  Expression | "rakho” id  :=  FunctionCall
+FunctionDeclaration → “kaam” id @ typeF ( ParameterList ) BlockF
+ParameterList → Parameter | Parameter "|" ParameterList 
+Parameter → id @ typeV
+Block → "karo" \n  StatementList "bas karo" \n
+BlockF →  "karo" \n  StatementList "kaam khatam" \n
+StatementList → Statement | Statement StatementList
+Statement → Expression | SelectionStatement |  IterativeStatement | ReturnStatement | VariableDeclaration | VariableAssignment | FunctionCall | IOStatement 
+IFStatementList → IFStatement | IFStatement IFStatementList
+IFStatement → Expression | SelectionStatement |  IterativeStatement | ReturnStatement | VariableDeclaration | VariableAssignment | FunctionCall | IOStatement | WarnaStatement
+SelectionStatement → "agar" ( Expression ) "to phir" BlockIF
+BlockIF → "karo" \n  IFStatement "bas karo" \n
+WarnaStatement → “warna” PhirStatement | ^ 
+PhirStatement →  "agar" ( Expression ) "to phir" \n  IFStatementList | "phir" StatementList | ^
+IterativeStatement → "jab tak" ( Expression ) Block
+ReturnStatement → "wapas bhaijo" Expression \n
+Expression → VariableAssignment | ComparisonExpression 
+ComparisonExpression →  E RELOPExpression | E
+RELOPExpression →  RELOP E 
+E → TT ASExpression
+ASExpression →  + TT ASExpression  | - TT ASExpression  | ^
+TT → Terminal MDExpression
+MDExpression → * Terminal MDExpression | / Terminal MDExpression | % Terminal MDExpression| ^
+Terminal → id | int | ( Expression ) | string
+FunctionCall → "chalao" id ( ArgumentList ) \n
+ArgumentList → Argument | Argument "|" ArgumentList 
+Argument → id | int | ( Expression ) | ^
+IOStatement → InputStatement | PrintStatement
+InputStatement → "lo" InputSpecifier \n
+InputSpecifier → InOutStatement | IS1
+IS1 → >> id InputVAR
+InputVAR → \n | IS1 \n
+InOutStatement→  << PrintArg 
+PrintArg →string PrintCont | Expression PrintCont | int PrintCont  | id PrintCont 
+PrintCont  → \n | InOutStatement | IS1 
+PrintStatement → "dekhao"  PS1
+PS1 → << PrintVar 
+PrintVar → string PrintTer | Expression PrintTer | int PrintTer | id PrintTer
+PrintTer → \n | PS1 
+typeF → “adad” | “khali”
+typeV → “adad” 
+id → ( letter | _ )( letter | digit | _ )* 
+int → digit(digit)*
+digit → [0-9]
+letter → [A-Za-z]
+RELOP → <= | <> | < | > | >= | =
+string → `char`
+char → letter | digit | ao | > | < | = | { | } | _ | ^ | [ | ] | \ | ? | . | " | $ | # | ! | & | | | : | ; | @ | ' | ( | )
+
+
+
+Orignal:
+Program → DeclarationList
+DeclarationList → Declaration DeclarationList | Declaration 
+Declaration → VariableDeclaration | FunctionDeclaration
+VariableDeclaration → “rakho” id @ type VDSpecifier
+VDSpecifier  → := Expression  | \n
+VariableAssignment → "rakho” id  :=  Expression
+FunctionDeclaration → “kaam” id @ typeF ( ParameterList ) BlockF
+ParameterList → Parameter "|" ParameterList | Parameter 
+Parameter → id @ typeV
+Block → "karo" \n  StatementList "bas karo" \n
+BlockF →  "karo" \n  StatementList "kaam khatam" \n
+StatementList → Statement StatementList | Statement 
+Statement → Expression | SelectionStatement |  IterativeStatement | ReturnStatement | VariableDeclaration | VariableAssignment | FunctionCall | IOStatement 
+IFStatementList → IFStatement IFStatementList | IFStatement 
+IFStatement → Expression | SelectionStatement |  IterativeStatement | ReturnStatement | VariableDeclaration | VariableAssignment | FunctionCall | IOStatement | WarnaStatement
+SelectionStatement → "agar" ( Expression ) "to phir" BlockIF
+BlockIF → "karo" \n  IFStatement "bas karo" \n
+WarnaStatement → “warna” PhirStatement | ^ 
+PhirStatement →  "agar" ( Expression ) "to phir" \n  IFStatementList | "phir" StatementList | ^
+IterativeStatement → "jab tak" ( Expression ) Block
+ReturnStatement → "wapas bhaijo" Expression \n
+Expression → VariableAssignment | ComparisonExpression 
+ComparisonExpression →  E RELOPExpression | E
+RELOPExpression →  RELOP E 
+E → E + E | E - E | E * E | E / E | E % E |id | int | ( Expression ) | string
+FunctionCall → "chalao" id ( ArgumentList ) \n
+ArgumentList → Argument "|" ArgumentList | Argument 
+Argument → id | int | ( Expression ) | ^
+IOStatement → InputStatement | PrintStatement
+InputStatement → "lo" InputSpecifier \n
+InputSpecifier → InOutStatement | IS1
+IS1 → >> id InputVAR
+InputVAR → \n | IS1 \n
+InOutStatement→  << PrintArg 
+PrintArg →string PrintCont | Expression PrintCont | int PrintCont  | id PrintCont 
+PrintCont  → \n | InOutStatement | IS1 
+PrintStatement → "dekhao"  PS1
+PS1 → << PrintVar 
+PrintVar → string PrintTer | Expression PrintTer | int PrintTer | id PrintTer
+PrintTer → \n | PS1 
+typeF → “adad” | “khali”
+typeV → “adad” 
+id → ( letter | _ )( letter | digit | _ )* 
+int → digit(digit)*
+digit → [0-9]
+letter → [A-Za-z]
+RELOP → <= | <> | < | > | >= | =
+string → `char`
+char → letter | digit | ao | > | < | = | { | } | _ | ^ | [ | ] | \ | ? | . | " | $ | # | ! | & | | | : | ; | @ | ' | ( | )

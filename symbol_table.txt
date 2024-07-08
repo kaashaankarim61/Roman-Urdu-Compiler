@@ -1,0 +1,14 @@
+TYPE        Initial_Value      Address      Id_Type        ID
+adad 				1			0			func			calculateFib
+adad 				0			4			param			n
+adad 				0			8			param			c
+adad 				0			12			var 			x
+adad 				1			16			var 			y
+adad 				0			20			var 			z
+adad 				0			24			var 			i
+adad 				0			28			var 			t1
+adad 				0			32			var 			t2
+khali				28			0			func			Markazi
+adad 				0			4			var 			num
+adad 				0			8			var 			result
+adad 				0			12			var 			t3

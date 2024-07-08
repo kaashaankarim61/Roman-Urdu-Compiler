@@ -1,0 +1,11 @@
+id -> ( letter | _ )( letter | digit | _ )* 
+int -> digit(digit)*
+digit -> [0-9]
+letter -> [A-Za-z]
+relop -> <= | <> | < | > | >= | =
+io -> << | >>
+string -> `char`
+comment -> ;(char | `) 
+char -> letter | digit | ao | > | < | = | { | } | _ | ^ | [ | ] | \ | ? | . | " | $ | # | ! | & | | | : | ; | @ | ' | ( | ) | ~
+ao -> + | - | * | / | %
+
